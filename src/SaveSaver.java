@@ -1,5 +1,10 @@
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
 
@@ -9,16 +14,16 @@ public class SaveSaver {
     usage: java -jar SaveSaver.jar <savePath> [(-u | -d) <cloudPath>] [-b <backupPath> <backupCount>...]
 
     arguments:
-    \t<savePath>\t\tpath to the game save folder
+    \t<savePath>\tpath to the game save folder
 
     options:
-    \t-u, --upload\t\tupload the save to the cloud
-    \t-d, --download \t\tdownload the save from the cloud
-    \t    <cloudPath>\t\tpath to the cloud save folder
+    \t-u, --upload\t\tupload the save to the cloud. This will override the cloud save.
+    \t-d, --download\t\tdownload the save from the cloud. This will override the local save.
+    \t\t<cloudPath>\tpath to the cloud save folder
 
     \t-b, --backup\t\tcreate a backup of the save folder
-    \t    <backupPath>\twhere to save the backup to
-    \t    <backupNumber>\tnumber of rotating backups to keep at path
+    \t\t<backupPath>\twhere to save the backup to
+    \t\t<backupNumber>\tnumber of rotating backups to keep at path
     """;
     private static final List<String> UPLOAD_OPTIONS = List.of("-u", "--upload");
     private static final List<String> DOWNLOAD_OPTIONS = List.of("-d", "--download");
@@ -30,8 +35,14 @@ public class SaveSaver {
     private static File cloudPath;
     private static List<Backup> backups;
 
+    // Parses the arguments, determines the operations, gets the path arguments, and checks for errors
     private static void parse(String[] args) {
         System.out.println(Arrays.toString(args));
+
+        if (args.length < 2) {
+            System.out.println(USAGE_STRING);
+            System.exit(1);
+        }
 
         // Save path
         savePath = new File(args[0]);
@@ -97,8 +108,51 @@ public class SaveSaver {
         }
     }
 
+    // Performs the operations
+    private static void process() throws IOException {
+        if (upload) {
+            System.out.println(String.format("Uploading save from %s to %s", savePath, cloudPath));
+            copyDirectory(savePath, cloudPath);
+        }
+        else if (download) {
+            System.out.println(String.format("Downloading save from %s to %s", cloudPath, savePath));
+            copyDirectory(cloudPath, savePath);
+        }
+
+        for (Backup backup : backups) {
+            System.out.println(String.format("Creating backup of %s at %s with %d backups", savePath, backup.path, backup.number));
+        }
+    }
+
+    // Recursively copies the contents of a directory to another directory
+    private static void copyDirectory(File source, File destination) throws IOException {
+        if (!destination.exists()) {
+            destination.mkdirs();
+        }
+        for (String name : source.list()) {
+            File sourceFile = new File(source, name);
+            File destinationFile = new File(destination, name);
+
+            // Recursive case (folder)
+            if (sourceFile.isDirectory()) {
+                copyDirectory(sourceFile, destinationFile);
+            }
+            // Base case (file)
+            else {
+                try (InputStream in = new FileInputStream(sourceFile); 
+                OutputStream out = new FileOutputStream(destinationFile)) {
+                    byte[] buf = new byte[1024];
+                    int length;
+                    while ((length = in.read(buf)) > 0) {
+                        out.write(buf, 0, length);
+                    }
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
-        System.out.println(USAGE_STRING);
         parse(args);
+        process();
     }
 }
