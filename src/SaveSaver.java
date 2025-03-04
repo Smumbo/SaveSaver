@@ -35,8 +35,12 @@ public class SaveSaver {
 
         // Save path
         savePath = new File(args[0]);
+        if (!savePath.exists()) {
+            System.err.println(String.format("Invalid save path (%s), path does not exist", args[0]));
+            System.exit(1);
+        }
         if (!savePath.isDirectory()) {
-            System.err.println(String.format("Invalid save path (%s), save path must be a directory", args[0]));
+            System.err.println(String.format("Invalid save path (%s), path must be a directory", args[0]));
             System.exit(1);
         }
 
@@ -49,22 +53,29 @@ public class SaveSaver {
             }
             if (DOWNLOAD_OPTIONS.contains(token)) {
                 download = true;
+                
             }
             if (upload && download) {
                 System.err.println("Cannot upload and download at the same time");
                 System.exit(1);
             }
-            if (upload || download) {
+            if (upload || download) { 
                 if (i + 1 >= args.length) {
                     System.err.println("Missing cloud path");
                     System.exit(1);
                 }
                 cloudPath = new File(args[i + 1]);
-                if (!cloudPath.isDirectory()) {
-                    System.err.println(String.format("Invalid cloud path (%s), cloud path must be a directory", args[i + 1]));
-                    System.exit(1);
-                }
                 i++;
+                if (download) {
+                    if (!cloudPath.exists()) {
+                        System.err.println(String.format("Invalid cloud path (%s), path does not exist", args[i + 1]));
+                        System.exit(1);
+                    }
+                    if (!cloudPath.isDirectory()) {
+                        System.err.println(String.format("Invalid cloud path (%s), path must be a directory", args[i + 1]));
+                        System.exit(1);
+                    }
+                }
                 continue;
             }
 
