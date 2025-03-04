@@ -1,5 +1,9 @@
-public class App {
+
+import java.util.Arrays;
+
+public class MinecraftSaveSync {
     public static void main(String[] args) throws Exception {
         System.out.println("Hello, World!");
+        System.out.println(Arrays.toString(args));
     }
 }
