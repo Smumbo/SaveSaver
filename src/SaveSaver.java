@@ -65,6 +65,7 @@ public class SaveSaver {
                     System.exit(1);
                 }
                 i++;
+                continue;
             }
 
             // Backups
