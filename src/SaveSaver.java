@@ -24,29 +24,55 @@ public class SaveSaver {
     private static final List<String> DOWNLOAD_OPTIONS = List.of("-d", "--download");
     private static final List<String> BACKUP_OPTIONS = List.of("-b", "--backup");
 
-    private File savePath;
-    private boolean upload;
-    private boolean download;
-    private File cloudPath;
-    private List<Backup> backups;
+    private static File savePath;
+    private static boolean upload = false;
+    private static boolean download = false;
+    private static File cloudPath;
+    private static List<Backup> backups;
 
-    private class Backup {
-        public File path;
-        public int number;
+    private static void parse(String[] args) {
+        System.out.println(Arrays.toString(args));
+        savePath = new File(args[0]);
 
-        public Backup(File path, int number) {
-            this.path = path;
-            this.number = number;
+        for (int i = 1; i < args.length; i++) {
+            String token = args[i];
+
+            // Upload or Download
+            if (UPLOAD_OPTIONS.contains(token)) {
+                upload = true;
+            }
+            if (DOWNLOAD_OPTIONS.contains(token)) {
+                download = true;
+            }
+            if (upload && download) {
+                System.err.println("Cannot upload and download at the same time");
+                System.exit(1);
+            }
+            if (upload || download) {
+                if (i + 1 >= args.length) {
+                    System.err.println("Missing cloud path");
+                    System.exit(1);
+                }
+                cloudPath = new File(args[i + 1]);
+                i++;
+            }
+
+            // Backups
+            if (BACKUP_OPTIONS.contains(token)) {
+                if (i + 2 >= args.length) {
+                    System.err.println("Missing backup path or number");
+                    System.exit(1);
+                }
+                File backupPath = new File(args[i + 1]);
+                int backupNumber = Integer.parseInt(args[i + 2]);
+                backups.add(new Backup(backupPath, backupNumber));
+                i += 2;
+            }
         }
-    }
-
-    public static void parse(String[] args) {
-
     }
 
     public static void main(String[] args) throws Exception {
         System.out.println(USAGE_STRING);
-        System.out.println(Arrays.toString(args));
         parse(args);
     }
 }
