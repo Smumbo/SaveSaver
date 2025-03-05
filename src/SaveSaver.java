@@ -11,6 +11,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.zip.ZipOutputStream;
 
+// TODO: add tree walk to copy full directory in upload/download
+// TODO: implement backup zip functionality
 
 public class SaveSaver {
     private static final String USAGE_STRING = """
