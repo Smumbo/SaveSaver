@@ -1,10 +1,10 @@
-import java.io.File;
+import java.nio.file.Path;
 
 public class Backup {
-    public File path;
+    public Path path;
     public int number;
 
-    public Backup(File path, int number) {
+    public Backup(Path path, int number) {
         this.path = path;
         this.number = number;
     }

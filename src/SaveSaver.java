@@ -1,5 +1,4 @@
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -96,11 +95,7 @@ public class SaveSaver {
                     System.err.println("Missing backup arguments");
                     System.exit(1);
                 }
-                File backupPath = new File(args[i + 1]);
-                if (!backupPath.isDirectory()) {
-                    System.err.println(String.format("Invalid backup path (%s), backup path must be a directory", args[i + 1]));
-                    System.exit(1);
-                }
+                Path backupPath = Paths.get(args[i + 1]);
                 int backupNumber = Integer.parseInt(args[i + 2]);
                 backups.add(new Backup(backupPath, backupNumber));
                 i += 2;
@@ -112,6 +107,9 @@ public class SaveSaver {
     private static void process() throws IOException {
         if (upload) {
             System.out.println(String.format("Uploading save from %s to %s", savePath, cloudPath));
+            if (!Files.exists(cloudPath)) {
+                Files.createDirectories(cloudPath);
+            }
             Files.copy(savePath, cloudPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
         }
         else if (download) {
