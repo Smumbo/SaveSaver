@@ -1,11 +1,15 @@
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.zip.ZipOutputStream;
 
 
 public class SaveSaver {
@@ -119,6 +123,12 @@ public class SaveSaver {
 
         for (Backup backup : backups) {
             System.out.println(String.format("Creating backup of %s at %s with %d backups", savePath, backup.path, backup.number));
+            if (!Files.exists(backup.path)) {
+                Files.createDirectories(backup.path);
+            }
+            String backupName = String.format("Backup%s.zip", new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()));
+            String fullBackupPath = backup.path.resolve(backupName).toString();
+            ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(fullBackupPath));
         }
     }
 
