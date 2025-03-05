@@ -1,10 +1,10 @@
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 
@@ -29,10 +29,10 @@ public class SaveSaver {
     private static final List<String> DOWNLOAD_OPTIONS = List.of("-d", "--download");
     private static final List<String> BACKUP_OPTIONS = List.of("-b", "--backup");
 
-    private static File savePath;
+    private static Path savePath;
     private static boolean upload = false;
     private static boolean download = false;
-    private static File cloudPath;
+    private static Path cloudPath;
     private static List<Backup> backups;
 
     // Parses the arguments, determines the operations, gets the path arguments, and checks for errors
@@ -45,12 +45,12 @@ public class SaveSaver {
         }
 
         // Save path
-        savePath = new File(args[0]);
-        if (!savePath.exists()) {
+        savePath = Paths.get(args[0]);
+        if (!Files.exists(savePath)) {
             System.err.println(String.format("Invalid save path (%s), path does not exist", args[0]));
             System.exit(1);
         }
-        if (!savePath.isDirectory()) {
+        if (!Files.isDirectory(savePath)) {
             System.err.println(String.format("Invalid save path (%s), path must be a directory", args[0]));
             System.exit(1);
         }
@@ -75,14 +75,14 @@ public class SaveSaver {
                     System.err.println("Missing cloud path");
                     System.exit(1);
                 }
-                cloudPath = new File(args[i + 1]);
+                cloudPath = Paths.get(args[i + 1]);
                 i++;
                 if (download) {
-                    if (!cloudPath.exists()) {
+                    if (!Files.exists(cloudPath)) {
                         System.err.println(String.format("Invalid cloud path (%s), path does not exist", args[i + 1]));
                         System.exit(1);
                     }
-                    if (!cloudPath.isDirectory()) {
+                    if (!Files.isDirectory(cloudPath)) {
                         System.err.println(String.format("Invalid cloud path (%s), path must be a directory", args[i + 1]));
                         System.exit(1);
                     }
@@ -112,42 +112,15 @@ public class SaveSaver {
     private static void process() throws IOException {
         if (upload) {
             System.out.println(String.format("Uploading save from %s to %s", savePath, cloudPath));
-            copyDirectory(savePath, cloudPath);
+            Files.copy(savePath, cloudPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
         }
         else if (download) {
             System.out.println(String.format("Downloading save from %s to %s", cloudPath, savePath));
-            copyDirectory(cloudPath, savePath);
+            Files.copy(cloudPath, savePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
         }
 
         for (Backup backup : backups) {
             System.out.println(String.format("Creating backup of %s at %s with %d backups", savePath, backup.path, backup.number));
-        }
-    }
-
-    // Recursively copies the contents of a directory to another directory
-    private static void copyDirectory(File source, File destination) throws IOException {
-        if (!destination.exists()) {
-            destination.mkdirs();
-        }
-        for (String name : source.list()) {
-            File sourceFile = new File(source, name);
-            File destinationFile = new File(destination, name);
-
-            // Recursive case (folder)
-            if (sourceFile.isDirectory()) {
-                copyDirectory(sourceFile, destinationFile);
-            }
-            // Base case (file)
-            else {
-                try (InputStream in = new FileInputStream(sourceFile); 
-                OutputStream out = new FileOutputStream(destinationFile)) {
-                    byte[] buf = new byte[1024];
-                    int length;
-                    while ((length = in.read(buf)) > 0) {
-                        out.write(buf, 0, length);
-                    }
-                }
-            }
         }
     }
 
