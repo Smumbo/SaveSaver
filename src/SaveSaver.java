@@ -111,26 +111,37 @@ public class SaveSaver {
 
     // Performs the operations
     private static void process() throws IOException {
-        if (upload) {
-            System.out.println(String.format("Uploading save from %s to %s", savePath, cloudPath));
-            if (!Files.exists(cloudPath)) {
-                Files.createDirectories(cloudPath);
+        if (upload || download) {
+            Path source;
+            Path destination;
+            if (upload) {
+                System.out.println(String.format("Uploading save from %s to %s", savePath, cloudPath));
+                if (!Files.exists(cloudPath)) {
+                    Files.createDirectories(cloudPath);
+                }
+                source = savePath;
+                destination = cloudPath;
+                Files.copy(savePath, cloudPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
             }
-            Files.copy(savePath, cloudPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+            else if (download) {
+                System.out.println(String.format("Downloading save from %s to %s", cloudPath, savePath));
+                source = cloudPath;
+                destination = savePath;
+                Files.copy(cloudPath, savePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+            }
         }
-        else if (download) {
-            System.out.println(String.format("Downloading save from %s to %s", cloudPath, savePath));
-            Files.copy(cloudPath, savePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
-        }
+        
 
-        for (Backup backup : backups) {
-            System.out.println(String.format("Creating backup of %s at %s with %d backups", savePath, backup.path, backup.number));
-            if (!Files.exists(backup.path)) {
-                Files.createDirectories(backup.path);
-            }
+        if (!backups.isEmpty()) {
             String backupName = String.format("Backup%s.zip", new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()));
-            String fullBackupPath = backup.path.resolve(backupName).toString();
-            ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(fullBackupPath));
+            ZipOutputStream backupArchive = new ZipOutputStream(new FileOutputStream(backupName));
+            
+            for (Backup backup : backups) {
+                System.out.println(String.format("Creating backup of %s at %s with %d backups", savePath, backup.path, backup.number));
+                if (!Files.exists(backup.path)) {
+                    Files.createDirectories(backup.path);
+                }
+                String fullBackupPath = backup.path.resolve(backupName).toString();            }
         }
     }
 
