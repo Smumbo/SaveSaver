@@ -16,7 +16,7 @@ import java.util.zip.ZipOutputStream;
 
 public class SaveSaver {
     private static final String USAGE_STRING = """
-    usage: java -jar SaveSaver.jar <savePath> [(-u | -d) <cloudPath>] [-b <backupPath> <backupCount>...]
+    usage: java -jar SaveSaver.jar <savePath> [(-u | -d) <cloudPath>] [-b <backupPath> [<backupCount>]...]
 
     arguments:
     \t<savePath>\tpath to the game save folder
@@ -28,7 +28,7 @@ public class SaveSaver {
 
     \t-b, --backup\t\tcreate a backup of the save folder
     \t\t<backupPath>\twhere to save the backup to
-    \t\t<backupNumber>\tnumber of rotating backups to keep at path
+    \t\t<backupNumber>\tnumber of rotating backups to keep at path. Setting to 0 or omitting will keep all backups.
     """;
     private static final List<String> UPLOAD_OPTIONS = List.of("-u", "--upload");
     private static final List<String> DOWNLOAD_OPTIONS = List.of("-d", "--download");
@@ -97,14 +97,18 @@ public class SaveSaver {
 
             // Backups
             if (BACKUP_OPTIONS.contains(token)) {
-                if (i + 2 >= args.length) {
-                    System.err.println("Missing backup arguments");
+                if (i + 1 >= args.length) {
+                    System.err.println("Missing backup path argument");
                     System.exit(1);
                 }
                 Path backupPath = Paths.get(args[i + 1]);
-                int backupNumber = Integer.parseInt(args[i + 2]);
+                int backupNumber = 0; // Default value
+                if (i + 2 < args.length && args[i + 2].matches("\\d+")) {
+                    backupNumber = Integer.parseInt(args[i + 2]);
+                    i++;
+                }
                 backups.add(new Backup(backupPath, backupNumber));
-                i += 2;
+                i++;
             }
         }
     }
@@ -131,7 +135,6 @@ public class SaveSaver {
             }
         }
         
-
         if (!backups.isEmpty()) {
             String backupName = String.format("Backup%s.zip", new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()));
             ZipOutputStream backupArchive = new ZipOutputStream(new FileOutputStream(backupName));
@@ -143,6 +146,16 @@ public class SaveSaver {
                 }
                 String fullBackupPath = backup.path.resolve(backupName).toString();            }
         }
+    }
+
+    // Copies a directory and its contents to another directory
+    private static void copyDirectory(Path source, Path destination) {
+
+    }
+
+    // Creates a backup of a directory and its contents
+    private static ZipOutputStream zipDirectory(Path source) {
+        return new ZipOutputStream(null);
     }
 
     public static void main(String[] args) throws Exception {
