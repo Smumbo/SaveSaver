@@ -1,4 +1,5 @@
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,7 +12,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.zip.ZipOutputStream;
 
-// TODO: add tree walk to copy full directory in upload/download
 // TODO: implement backup zip functionality
 
 public class SaveSaver {
@@ -116,46 +116,51 @@ public class SaveSaver {
     // Performs the operations
     private static void process() throws IOException {
         if (upload || download) {
-            Path source;
-            Path destination;
             if (upload) {
                 System.out.println(String.format("Uploading save from %s to %s", savePath, cloudPath));
                 if (!Files.exists(cloudPath)) {
                     Files.createDirectories(cloudPath);
                 }
-                source = savePath;
-                destination = cloudPath;
-                Files.copy(savePath, cloudPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+                copyDirectory(savePath, cloudPath);
             }
             else if (download) {
                 System.out.println(String.format("Downloading save from %s to %s", cloudPath, savePath));
-                source = cloudPath;
-                destination = savePath;
-                Files.copy(cloudPath, savePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+                copyDirectory(cloudPath, savePath);
             }
         }
         
         if (!backups.isEmpty()) {
             String backupName = String.format("Backup%s.zip", new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()));
             ZipOutputStream backupArchive = new ZipOutputStream(new FileOutputStream(backupName));
+            backupArchive.close();
+            File backupFile = new File(backupName);
             
             for (Backup backup : backups) {
                 System.out.println(String.format("Creating backup of %s at %s with %d backups", savePath, backup.path, backup.number));
                 if (!Files.exists(backup.path)) {
                     Files.createDirectories(backup.path);
                 }
-                String fullBackupPath = backup.path.resolve(backupName).toString();            }
+                String fullBackupPath = backup.path.resolve(backupName).toString();
+            }
         }
     }
 
     // Copies a directory and its contents to another directory
-    private static void copyDirectory(Path source, Path destination) {
-
+    private static void copyDirectory(Path sourceFolder, Path destinationFolder) throws IOException {
+        Files.walk(sourceFolder).forEach(source -> {
+            // Combines the destinationFolder path with the relative path extracted from the source path to create the full destination path
+            Path destination = Paths.get(destinationFolder.toString(), source.toString().substring(sourceFolder.toString().length()));
+            try {
+                Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     // Creates a backup of a directory and its contents
-    private static ZipOutputStream zipDirectory(Path source) {
-        return new ZipOutputStream(null);
+    private static void zipDirectory(Path directory, ZipOutputStream zipOut) {
+        
     }
 
     public static void main(String[] args) throws Exception {
