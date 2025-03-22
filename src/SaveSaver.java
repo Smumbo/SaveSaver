@@ -6,6 +6,7 @@ import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -165,15 +166,17 @@ public class SaveSaver {
                                 }
                             })
                             .toList();
-                        currentBackupCount = backupFiles.size();
+                        List<Path> mutableBackupFiles = new LinkedList<>(backupFiles);
+                        currentBackupCount = mutableBackupFiles.size();
 
                         // Delete oldest backups until the number of backups is less than the maximum
                         if (currentBackupCount > backup.max) {
-                            System.out.println(String.format("Max backups at \"%s\" reached (%d/%d), deleting %d oldest backup(s)", backup.path, currentBackupCount, backup.max, currentBackupCount - backup.max));
+                            System.out.println(String.format("Max backups at \"%s\" reached (%d), deleting oldest backup(s)", backup.path, backup.max));
                         }
                         while (currentBackupCount > backup.max) {
-                            Files.delete(backupFiles.get(0));
-                            backupFiles.remove(0);
+                            Files.delete(mutableBackupFiles.get(0));
+                            System.out.println(String.format("Deleted backup: \"%s\"", mutableBackupFiles.get(0)));
+                            mutableBackupFiles.remove(0);
                             currentBackupCount--;
                         }
                     } catch (IOException e) {
