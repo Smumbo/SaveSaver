@@ -63,32 +63,44 @@ public class SaveSaver {
             // Upload or Download
             if (UPLOAD_OPTIONS.contains(token)) {
                 upload = true;
-            }
-            if (DOWNLOAD_OPTIONS.contains(token)) {
-                download = true;
-                
-            }
-            if (upload && download) {
-                System.err.println("Cannot upload and download at the same time");
-                System.exit(1);
-            }
-            if (upload || download) { 
+
+                if (download) {
+                    System.err.println("Cannot upload and download at the same time");
+                    System.exit(1);
+                }
+
                 if (i + 1 >= args.length) {
                     System.err.println("Missing cloud path");
                     System.exit(1);
                 }
                 cloudPath = Paths.get(args[i + 1]);
                 i++;
-                if (download) {
-                    if (!Files.exists(cloudPath)) {
-                        System.err.println(String.format("Invalid cloud path (%s), path does not exist", args[i + 1]));
-                        System.exit(1);
-                    }
-                    if (!Files.isDirectory(cloudPath)) {
-                        System.err.println(String.format("Invalid cloud path (%s), path must be a directory", args[i + 1]));
-                        System.exit(1);
-                    }
+                continue;
+            }
+            if (DOWNLOAD_OPTIONS.contains(token)) {
+                download = true;
+
+                if (upload) {
+                    System.err.println("Cannot upload and download at the same time");
+                    System.exit(1);
                 }
+                
+                if (i + 1 >= args.length) {
+                    System.err.println("Missing cloud path");
+                    System.exit(1);
+                }
+                cloudPath = Paths.get(args[i + 1]);
+                i++;
+                
+                if (!Files.exists(cloudPath)) {
+                    System.err.println(String.format("Invalid cloud path \"%s\", path does not exist", args[i + 1]));
+                    System.exit(1);
+                }
+                if (!Files.isDirectory(cloudPath)) {
+                    System.err.println(String.format("Invalid cloud path \"%s\", path must be a directory", args[i + 1]));
+                    System.exit(1);
+                }
+
                 continue;
             }
 
@@ -112,18 +124,16 @@ public class SaveSaver {
 
     // Performs the operations
     private static void process() throws IOException {
-        if (upload || download) {
-            if (upload) {
-                System.out.println(String.format("Uploading save from %s to %s", savePath, cloudPath));
-                if (!Files.exists(cloudPath)) {
-                    Files.createDirectories(cloudPath);
-                }
-                copyDirectory(savePath, cloudPath);
+        if (upload) {
+            System.out.println(String.format("Uploading save from \"%s to \"%s\"", savePath, cloudPath));
+            if (!Files.exists(cloudPath)) {
+                Files.createDirectories(cloudPath);
             }
-            else if (download) {
-                System.out.println(String.format("Downloading save from %s to %s", cloudPath, savePath));
-                copyDirectory(cloudPath, savePath);
-            }
+            copyDirectory(savePath, cloudPath);
+        }
+        else if (download) {
+            System.out.println(String.format("Downloading save from \"%s\" to \"%s\"", cloudPath, savePath));
+            copyDirectory(cloudPath, savePath);
         }
         
         if (!backups.isEmpty()) {
@@ -133,7 +143,7 @@ public class SaveSaver {
             
             // Copy the zip file to each backup location and delete oldest backups if necessary
             for (Backup backup : backups) {
-                System.out.println(String.format("Creating backup of %s at %s with %d backups", savePath, backup.path, backup.max));
+                System.out.println(String.format("Creating backup of \"%s\" at \"%s\" with %d backups", savePath, backup.path, backup.max));
                 if (!Files.exists(backup.path)) {
                     Files.createDirectories(backup.path);
                 }
@@ -205,6 +215,7 @@ public class SaveSaver {
     }
 
     public static void main(String[] args) throws Exception {
+        System.out.println(args);
         parse(args);
         process();
     }
