@@ -134,13 +134,14 @@ public class SaveSaver {
         }
         
         if (!backups.isEmpty()) {
+            System.out.println(String.format("Creating backup(s) of \"%s\"", savePath));
+
             String backupName = String.format("Backup_%s.zip", new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()));
             Path backupPath = Paths.get(backupName);
             zipDirectory(savePath, backupPath);
             
             // Copy the zip file to each backup location and delete oldest backups if necessary
             for (Backup backup : backups) {
-                System.out.println(String.format("Creating backup of \"%s\" at \"%s\" with %d backups", savePath, backup.path, backup.max));
                 if (!Files.exists(backup.path)) {
                     Files.createDirectories(backup.path);
                 }
@@ -171,6 +172,8 @@ public class SaveSaver {
                         System.err.println("Error managing backup files: " + e.getMessage());
                     }
                 }
+
+                System.out.println(String.format("Created backup at \"%s\" with %d backups", backup.path, backup.max));
             }
 
             Files.delete(backupPath);
