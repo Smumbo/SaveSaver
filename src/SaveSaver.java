@@ -44,7 +44,7 @@ public class SaveSaver {
             System.exit(1);
         }
 
-        // Save path
+        // Get save path
         savePath = Paths.get(args[0]);
         if (!Files.exists(savePath)) {
             System.err.println(String.format("Invalid save path (%s), path does not exist", args[0]));
@@ -55,23 +55,25 @@ public class SaveSaver {
             System.exit(1);
         }
 
+        // Determine operations
         for (int i = 1; i < args.length; i++) {
             String token = args[i];
 
-            // Upload or Download
             if (UPLOAD_OPTIONS.contains(token)) {
                 upload = true;
-
+                
                 if (download) {
                     System.err.println("Cannot upload and download at the same time");
                     System.exit(1);
                 }
 
+                // Get cloud path
                 if (i + 1 >= args.length) {
                     System.err.println("Missing cloud path");
                     System.exit(1);
                 }
                 cloudPath = Paths.get(args[i + 1]);
+
                 i++;
                 continue;
             }
@@ -83,12 +85,14 @@ public class SaveSaver {
                     System.exit(1);
                 }
                 
+                // Get cloud path
                 if (i + 1 >= args.length) {
                     System.err.println("Missing cloud path");
                     System.exit(1);
                 }
                 cloudPath = Paths.get(args[i + 1]);
                 
+                // Check if cloud path to download from is valid
                 if (!Files.exists(cloudPath)) {
                     System.err.println(String.format("Invalid cloud path \"%s\", path does not exist", args[i + 1]));
                     System.exit(1);
@@ -101,8 +105,6 @@ public class SaveSaver {
                 i++;
                 continue;
             }
-
-            // Backups
             if (BACKUP_OPTIONS.contains(token)) {
                 if (i + 1 >= args.length) {
                     System.err.println("Missing backup path argument");
@@ -123,6 +125,7 @@ public class SaveSaver {
     // Performs the operations
     private static void process() throws IOException {
         if (upload) {
+            // Upload save to cloud
             System.out.println(String.format("Uploading save from \"%s to \"%s\"", savePath, cloudPath));
             if (!Files.exists(cloudPath)) {
                 Files.createDirectories(cloudPath);
@@ -130,16 +133,18 @@ public class SaveSaver {
             copyDirectory(savePath, cloudPath);
         }
         else if (download) {
+            // Download save from cloud
             System.out.println(String.format("Downloading save from \"%s\" to \"%s\"", cloudPath, savePath));
             copyDirectory(cloudPath, savePath);
         }
         
         if (!backups.isEmpty()) {
+            // Perform backup operations
             System.out.println(String.format("Creating backup(s) of \"%s\"", savePath));
 
             String backupName = String.format("Backup_%s.zip", new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()));
-            Path backupPath = Paths.get(backupName);
-            zipDirectory(savePath, backupPath);
+            Path backupPathTemp = Paths.get(backupName); // Temporary path for the zip file until it is copied to the backup locations
+            zipDirectory(savePath, backupPathTemp);
             
             // Copy the zip file to each backup location and delete oldest backups if necessary
             for (Backup backup : backups) {
@@ -149,7 +154,7 @@ public class SaveSaver {
                     Files.createDirectories(backup.path);
                 }
                 Path backupDestination = backup.path.resolve(backupName);
-                Files.copy(backupPath, backupDestination);
+                Files.copy(backupPathTemp, backupDestination);
                 int currentBackupCount = 0;
 
                 // Delete oldest backups if necessary
@@ -183,10 +188,10 @@ public class SaveSaver {
                         System.err.println("Error managing backup files: " + e.getMessage());
                     }
                 }
-                
             }
 
-            Files.delete(backupPath);
+            // Delete the temporary zip file
+            Files.delete(backupPathTemp);
         }
     }
 
