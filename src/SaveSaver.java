@@ -1,3 +1,9 @@
+/**
+ * SaveSaver - DIY save management tool
+ * @author Jonah Venglarcik
+ * @version 1.0
+ */
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
