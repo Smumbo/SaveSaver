@@ -142,6 +142,8 @@ public class SaveSaver {
             
             // Copy the zip file to each backup location and delete oldest backups if necessary
             for (Backup backup : backups) {
+                System.out.println(String.format("Creating backup at \"%s\"", backup.path, backup.max));
+
                 if (!Files.exists(backup.path)) {
                     Files.createDirectories(backup.path);
                 }
@@ -166,6 +168,9 @@ public class SaveSaver {
                         currentBackupCount = backupFiles.size();
 
                         // Delete oldest backups until the number of backups is less than the maximum
+                        if (currentBackupCount > backup.max) {
+                            System.out.println(String.format("Max backups at \"%s\" reached (%d/%d), deleting %d oldest backup(s)", backup.path, currentBackupCount, backup.max, currentBackupCount - backup.max));
+                        }
                         while (currentBackupCount > backup.max) {
                             Files.delete(backupFiles.get(0));
                             backupFiles.remove(0);
@@ -175,8 +180,7 @@ public class SaveSaver {
                         System.err.println("Error managing backup files: " + e.getMessage());
                     }
                 }
-
-                System.out.println(String.format("Created backup at \"%s\" with %d/%d backups", backup.path, currentBackupCount, backup.max));
+                
             }
 
             Files.delete(backupPath);
