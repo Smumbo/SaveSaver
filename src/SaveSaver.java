@@ -147,6 +147,7 @@ public class SaveSaver {
                 }
                 Path backupDestination = backup.path.resolve(backupName);
                 Files.copy(backupPath, backupDestination);
+                int currentBackupCount = 0;
 
                 // Delete oldest backups if necessary
                 if (backup.max > 0) {
@@ -162,18 +163,20 @@ public class SaveSaver {
                                 }
                             })
                             .toList();
-                        
+                        currentBackupCount = backupFiles.size();
+
                         // Delete oldest backups until the number of backups is less than the maximum
-                        while (backupFiles.size() > backup.max) {
+                        while (currentBackupCount > backup.max) {
                             Files.delete(backupFiles.get(0));
                             backupFiles.remove(0);
+                            currentBackupCount--;
                         }
                     } catch (IOException e) {
                         System.err.println("Error managing backup files: " + e.getMessage());
                     }
                 }
 
-                System.out.println(String.format("Created backup at \"%s\" with %d backups", backup.path, backup.max));
+                System.out.println(String.format("Created backup at \"%s\" with %d/%d backups", backup.path, currentBackupCount, backup.max));
             }
 
             Files.delete(backupPath);
