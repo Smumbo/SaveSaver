@@ -88,7 +88,6 @@ public class SaveSaver {
                     System.exit(1);
                 }
                 cloudPath = Paths.get(args[i + 1]);
-                i++;
                 
                 if (!Files.exists(cloudPath)) {
                     System.err.println(String.format("Invalid cloud path \"%s\", path does not exist", args[i + 1]));
@@ -99,6 +98,7 @@ public class SaveSaver {
                     System.exit(1);
                 }
 
+                i++;
                 continue;
             }
 
