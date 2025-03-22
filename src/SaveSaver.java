@@ -1,18 +1,15 @@
-
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
-// TODO: implement backup zip functionality
 
 public class SaveSaver {
     private static final String USAGE_STRING = """
@@ -38,7 +35,7 @@ public class SaveSaver {
     private static boolean upload = false;
     private static boolean download = false;
     private static Path cloudPath;
-    private static List<Backup> backups;
+    private static List<Backup> backups = new ArrayList<Backup>();
 
     // Parses the arguments, determines the operations, gets the path arguments, and checks for errors
     private static void parse(String[] args) {
@@ -102,12 +99,12 @@ public class SaveSaver {
                     System.exit(1);
                 }
                 Path backupPath = Paths.get(args[i + 1]);
-                int backupNumber = 0; // Default value
+                int maxBackups = 0; // Default value
                 if (i + 2 < args.length && args[i + 2].matches("\\d+")) {
-                    backupNumber = Integer.parseInt(args[i + 2]);
+                    maxBackups = Integer.parseInt(args[i + 2]);
                     i++;
                 }
-                backups.add(new Backup(backupPath, backupNumber));
+                backups.add(new Backup(backupPath, maxBackups));
                 i++;
             }
         }
@@ -130,18 +127,46 @@ public class SaveSaver {
         }
         
         if (!backups.isEmpty()) {
-            String backupName = String.format("Backup%s.zip", new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()));
-            ZipOutputStream backupArchive = new ZipOutputStream(new FileOutputStream(backupName));
-            backupArchive.close();
-            File backupFile = new File(backupName);
+            String backupName = String.format("Backup_%s.zip", new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()));
+            Path backupPath = Paths.get(backupName);
+            zipDirectory(savePath, backupPath);
             
+            // Copy the zip file to each backup location and delete oldest backups if necessary
             for (Backup backup : backups) {
-                System.out.println(String.format("Creating backup of %s at %s with %d backups", savePath, backup.path, backup.number));
+                System.out.println(String.format("Creating backup of %s at %s with %d backups", savePath, backup.path, backup.max));
                 if (!Files.exists(backup.path)) {
                     Files.createDirectories(backup.path);
                 }
-                String fullBackupPath = backup.path.resolve(backupName).toString();
+                Path backupDestination = backup.path.resolve(backupName);
+                Files.copy(backupPath, backupDestination);
+
+                // Delete oldest backups if necessary
+                if (backup.max > 0) {
+                    try {
+                        // Get all backup files with matching name pattern, sorted by last modified time
+                        List<Path> backupFiles = Files.list(backup.path)
+                            .filter(path -> path.getFileName().toString().matches("Backup_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}-\\d{2}\\.zip"))
+                            .sorted((p1, p2) -> {
+                                try {
+                                    return Files.getLastModifiedTime(p1).compareTo(Files.getLastModifiedTime(p2));
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            })
+                            .toList();
+                        
+                        // Delete oldest backups until the number of backups is less than the maximum
+                        while (backupFiles.size() > backup.max) {
+                            Files.delete(backupFiles.get(0));
+                            backupFiles.remove(0);
+                        }
+                    } catch (IOException e) {
+                        System.err.println("Error managing backup files: " + e.getMessage());
+                    }
+                }
             }
+
+            Files.delete(backupPath);
         }
     }
 
@@ -159,8 +184,24 @@ public class SaveSaver {
     }
 
     // Creates a backup of a directory and its contents
-    private static void zipDirectory(Path directory, ZipOutputStream zipOut) {
-        
+    private static void zipDirectory(Path sourceDirPath, Path zipFilePath) {
+        try(ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(zipFilePath))) {
+            // Walks through the source directory and adds each file to the zip file
+            Files.walk(sourceDirPath)
+                .filter(path -> !Files.isDirectory(path))
+                .forEach(path -> {
+                ZipEntry zipEntry = new ZipEntry(sourceDirPath.relativize(path).toString());
+                try {
+                    zipOut.putNextEntry(zipEntry);
+                    Files.copy(path, zipOut);
+                    zipOut.closeEntry();
+                } catch (IOException e) {
+                    System.err.println(e);
+                }
+            });
+        } catch (IOException e) {
+            System.err.println(e);
+        }
     }
 
     public static void main(String[] args) throws Exception {

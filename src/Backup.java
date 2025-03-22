@@ -2,10 +2,10 @@ import java.nio.file.Path;
 
 public class Backup {
     public Path path;
-    public int number;
+    public int max;
 
-    public Backup(Path path, int number) {
+    public Backup(Path path, int max) {
         this.path = path;
-        this.number = number;
+        this.max = max;
     }
 }
