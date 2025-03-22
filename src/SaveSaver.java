@@ -186,7 +186,9 @@ public class SaveSaver {
             // Combines the destinationFolder path with the relative path extracted from the source path to create the full destination path
             Path destination = Paths.get(destinationFolder.toString(), source.toString().substring(sourceFolder.toString().length()));
             try {
-                Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+                if (!Files.isDirectory(destination)) {
+                    Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
