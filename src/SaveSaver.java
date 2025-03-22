@@ -39,8 +39,6 @@ public class SaveSaver {
 
     // Parses the arguments, determines the operations, gets the path arguments, and checks for errors
     private static void parse(String[] args) {
-        System.out.println(Arrays.toString(args));
-
         if (args.length < 2) {
             System.out.println(USAGE_STRING);
             System.exit(1);
@@ -217,8 +215,8 @@ public class SaveSaver {
     }
 
     public static void main(String[] args) throws Exception {
-        System.out.println(args);
         parse(args);
         process();
+        System.out.println("Done!");
     }
 }
