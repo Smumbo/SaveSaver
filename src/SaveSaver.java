@@ -39,8 +39,6 @@ public class SaveSaver {
 
     // Parses the arguments, determines the operations, gets the path arguments, and checks for errors
     private static void parse(String[] args) {
-        System.out.println(Arrays.toString(args));
-
         if (args.length < 2) {
             System.out.println(USAGE_STRING);
             System.exit(1);
@@ -90,7 +88,6 @@ public class SaveSaver {
                     System.exit(1);
                 }
                 cloudPath = Paths.get(args[i + 1]);
-                i++;
                 
                 if (!Files.exists(cloudPath)) {
                     System.err.println(String.format("Invalid cloud path \"%s\", path does not exist", args[i + 1]));
@@ -101,6 +98,7 @@ public class SaveSaver {
                     System.exit(1);
                 }
 
+                i++;
                 continue;
             }
 
